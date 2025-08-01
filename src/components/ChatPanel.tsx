@@ -15,7 +15,14 @@ import {
   Paperclip,
   HardDrive,
   Code,
-  Mic
+  Mic,
+  Settings,
+  BookOpen,
+  ImageIcon,
+  Lightbulb,
+  Wifi,
+  PaintBucket,
+  ChevronDown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -48,6 +55,7 @@ export const ChatPanel = ({
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,13 +74,16 @@ export const ChatPanel = ({
       if (showAttachMenu && !(event.target as Element).closest('.attach-menu-container')) {
         setShowAttachMenu(false);
       }
+      if (showToolsMenu && !(event.target as Element).closest('.tools-menu-container')) {
+        setShowToolsMenu(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showAttachMenu]);
+  }, [showAttachMenu, showToolsMenu]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -311,49 +322,59 @@ export const ChatPanel = ({
       />
 
       {/* Input area */}
-      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-3 px-4">
+      <div className="p-4">
         <form onSubmit={handleSubmit} className="relative">
-          {/* Main input container - Gemini style */}
-          <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full py-1.5 px-2 flex items-center gap-2">
-            {/* Attach menu button */}
-            <div className="relative attach-menu-container">
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-3 flex items-center gap-3">
+            {/* Tools dropdown */}
+            <div className="relative tools-menu-container">
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="h-7 w-7 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
-                onClick={() => setShowAttachMenu(!showAttachMenu)}
+                className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full px-3 py-1.5 text-sm"
+                onClick={() => setShowToolsMenu(!showToolsMenu)}
               >
-                <Plus className="h-4 w-4" />
+                <Settings className="h-4 w-4" />
+                <span>Tools</span>
+                <ChevronDown className="h-3 w-3" />
               </Button>
-              {/* Attach menu */}
-              {showAttachMenu && (
-                <div className="absolute bottom-full left-0 mb-2 bg-gray-800 text-white rounded-lg shadow-xl p-2 w-48 z-50">
-                  <div 
-                    className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer"
-                    onClick={handleFileUpload}
-                  >
-                    <Paperclip className="h-4 w-4" />
-                    <span className="text-sm">Upload files</span>
+              
+              {/* Tools dropdown menu */}
+              {showToolsMenu && (
+                <div className="absolute bottom-full left-0 mb-2 bg-gray-800 text-white rounded-lg shadow-xl p-2 w-56 z-50">
+                  <div className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded cursor-pointer">
+                    <BookOpen className="h-4 w-4" />
+                    <span className="text-sm">Study and learn</span>
                   </div>
-                  <div className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer opacity-50">
-                    <HardDrive className="h-4 w-4" />
-                    <span className="text-sm">Add from Drive</span>
+                  <div className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded cursor-pointer">
+                    <ImageIcon className="h-4 w-4" />
+                    <span className="text-sm">Create image</span>
                   </div>
-                  <div className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer opacity-50">
-                    <Code className="h-4 w-4" />
-                    <span className="text-sm">Import code</span>
+                  <div className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded cursor-pointer">
+                    <Lightbulb className="h-4 w-4" />
+                    <span className="text-sm">Think longer</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded cursor-pointer">
+                    <Wifi className="h-4 w-4" />
+                    <span className="text-sm">Deep research</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded cursor-pointer">
+                    <Wifi className="h-4 w-4" />
+                    <span className="text-sm">Web search</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 hover:bg-gray-700 rounded cursor-pointer">
+                    <PaintBucket className="h-4 w-4" />
+                    <span className="text-sm">Canvas</span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Textarea */}
+            {/* Input field */}
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message here..."
-              className="flex-1 min-h-[32px] max-h-32 bg-transparent border-none focus:ring-0 focus:outline-none resize-none placeholder:text-gray-500 dark:placeholder:text-gray-400 text-sm"
+              placeholder="Ask anything"
+              className="flex-1 min-h-[24px] max-h-32 bg-transparent border-none focus:ring-0 focus:outline-none resize-none placeholder:text-gray-500 dark:placeholder:text-gray-400 text-sm"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -362,17 +383,17 @@ export const ChatPanel = ({
               }}
             />
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-1">
-              {/* Voice search button */}
+            {/* Right side buttons */}
+            <div className="flex items-center gap-2">
+              {/* Voice input button */}
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className={`h-7 w-7 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                className={`h-8 w-8 rounded-full ${
                   isListening 
                     ? 'text-primary animate-pulse' 
-                    : 'text-gray-500 dark:text-gray-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
                 onClick={handleVoiceSearch}
                 disabled={isListening}
@@ -385,17 +406,14 @@ export const ChatPanel = ({
                 <Button 
                   type="submit" 
                   disabled={isLoading}
-                  className="h-7 w-7 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 p-0"
+                  className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 p-0"
                 >
-                  <Send className="h-3 w-3" />
+                  <Send className="h-4 w-4" />
                 </Button>
               )}
             </div>
           </div>
         </form>
-        <p className="text-xs text-gray-400 mt-2">
-          Press Enter to send, Shift+Enter for new line
-        </p>
       </div>
     </div>
   );
