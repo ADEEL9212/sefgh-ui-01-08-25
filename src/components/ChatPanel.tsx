@@ -47,7 +47,10 @@ export const ChatPanel = ({
   const [input, setInput] = useState('');
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const scrollToBottom = () => {
@@ -57,6 +60,19 @@ export const ChatPanel = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showAttachMenu && !(event.target as Element).closest('.attach-menu-container')) {
+        setShowAttachMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAttachMenu]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +111,59 @@ export const ChatPanel = ({
 
   const formatTimestamp = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      console.log('Selected files:', Array.from(files).map(file => file.name));
+      toast({
+        title: "Files selected",
+        description: `${files.length} file(s) selected: ${Array.from(files).map(f => f.name).join(', ')}`,
+        duration: 3000,
+      });
+    }
+  };
+
+  const handleVoiceSearch = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      alert("Voice search is not supported by your browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    setIsListening(true);
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev + (prev ? ' ' : '') + transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      toast({
+        title: "Voice recognition error",
+        description: "Failed to recognize speech. Please try again.",
+        duration: 3000,
+      });
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
   };
 
   return (
@@ -232,37 +301,51 @@ export const ChatPanel = ({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        multiple
+        className="hidden"
+      />
+
       {/* Input area */}
       <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-3 px-4">
         <form onSubmit={handleSubmit} className="relative">
           {/* Main input container - Gemini style */}
-          <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full p-2 flex items-end gap-2">
+          <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full py-1.5 px-2 flex items-center gap-2">
             {/* Attach menu button */}
-            <div className="relative">
+            <div className="relative attach-menu-container">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
-                onClick={() => {/* TODO: Implement attach menu */}}
+                className="h-7 w-7 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+                onClick={() => setShowAttachMenu(!showAttachMenu)}
               >
                 <Plus className="h-4 w-4" />
               </Button>
-              {/* Attach menu - hidden for now */}
-              <div className="absolute bottom-full left-0 mb-2 bg-gray-800 text-white rounded-lg shadow-xl p-2 w-48 hidden">
-                <div className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer">
-                  <Paperclip className="h-4 w-4" />
-                  <span className="text-sm">Upload files</span>
+              {/* Attach menu */}
+              {showAttachMenu && (
+                <div className="absolute bottom-full left-0 mb-2 bg-gray-800 text-white rounded-lg shadow-xl p-2 w-48 z-50">
+                  <div 
+                    className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer"
+                    onClick={handleFileUpload}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                    <span className="text-sm">Upload files</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer opacity-50">
+                    <HardDrive className="h-4 w-4" />
+                    <span className="text-sm">Add from Drive</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer opacity-50">
+                    <Code className="h-4 w-4" />
+                    <span className="text-sm">Import code</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer">
-                  <HardDrive className="h-4 w-4" />
-                  <span className="text-sm">Add from Drive</span>
-                </div>
-                <div className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer">
-                  <Code className="h-4 w-4" />
-                  <span className="text-sm">Import code</span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Textarea */}
@@ -270,7 +353,7 @@ export const ChatPanel = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Type your message here..."
-              className="flex-1 min-h-[40px] max-h-32 bg-transparent border-none focus:ring-0 focus:outline-none resize-none placeholder:text-gray-500 dark:placeholder:text-gray-400"
+              className="flex-1 min-h-[32px] max-h-32 bg-transparent border-none focus:ring-0 focus:outline-none resize-none placeholder:text-gray-500 dark:placeholder:text-gray-400 text-sm"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -286,8 +369,13 @@ export const ChatPanel = ({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
-                onClick={() => {/* TODO: Implement voice search */}}
+                className={`h-7 w-7 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                  isListening 
+                    ? 'text-primary animate-pulse' 
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}
+                onClick={handleVoiceSearch}
+                disabled={isListening}
               >
                 <Mic className="h-4 w-4" />
               </Button>
@@ -297,15 +385,15 @@ export const ChatPanel = ({
                 <Button 
                   type="submit" 
                   disabled={isLoading}
-                  className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 p-0"
+                  className="h-7 w-7 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 p-0"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-3 w-3" />
                 </Button>
               )}
             </div>
           </div>
         </form>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-xs text-gray-400 mt-2">
           Press Enter to send, Shift+Enter for new line
         </p>
       </div>
