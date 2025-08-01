@@ -10,7 +10,12 @@ import {
   Trash2, 
   User, 
   Bot,
-  Loader2
+  Loader2,
+  Plus,
+  Paperclip,
+  HardDrive,
+  Code,
+  Mic
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -134,19 +139,20 @@ export const ChatPanel = ({
                     <Textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
-                      className="min-h-[80px]"
+                      className="min-h-[80px] bg-gray-100 dark:bg-gray-800"
                     />
                     <div className="flex gap-2">
                       <Button
                         size="sm"
                         onClick={() => handleSaveEdit(message.id)}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
-                        Save
+                        Save & Submit
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
                         onClick={handleCancelEdit}
+                        className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-1"
                       >
                         Cancel
                       </Button>
@@ -227,27 +233,77 @@ export const ChatPanel = ({
       </div>
 
       {/* Input area */}
-      <div className="border-t p-4">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message here..."
-            className="min-h-[60px] resize-none"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit(e);
-              }
-            }}
-          />
-          <Button 
-            type="submit" 
-            disabled={!input.trim() || isLoading}
-            className="px-4"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+      <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-3 px-4">
+        <form onSubmit={handleSubmit} className="relative">
+          {/* Main input container - Gemini style */}
+          <div className="bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full p-2 flex items-end gap-2">
+            {/* Attach menu button */}
+            <div className="relative">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+                onClick={() => {/* TODO: Implement attach menu */}}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              {/* Attach menu - hidden for now */}
+              <div className="absolute bottom-full left-0 mb-2 bg-gray-800 text-white rounded-lg shadow-xl p-2 w-48 hidden">
+                <div className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer">
+                  <Paperclip className="h-4 w-4" />
+                  <span className="text-sm">Upload files</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer">
+                  <HardDrive className="h-4 w-4" />
+                  <span className="text-sm">Add from Drive</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 hover:bg-gray-700 rounded cursor-pointer">
+                  <Code className="h-4 w-4" />
+                  <span className="text-sm">Import code</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Textarea */}
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your message here..."
+              className="flex-1 min-h-[40px] max-h-32 bg-transparent border-none focus:ring-0 focus:outline-none resize-none placeholder:text-gray-500 dark:placeholder:text-gray-400"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit(e);
+                }
+              }}
+            />
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-1">
+              {/* Voice search button */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+                onClick={() => {/* TODO: Implement voice search */}}
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+
+              {/* Send button - only visible when there's text */}
+              {input.trim() && (
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="h-8 w-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 p-0"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </form>
         <p className="text-xs text-muted-foreground mt-2">
           Press Enter to send, Shift+Enter for new line
